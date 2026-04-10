@@ -2,14 +2,25 @@
 
 Bot de Telegram conversacional para acompanhar jogos do seu time com linguagem natural.
 
-## O que ele faz
-- Entende mensagens como:
-  - `sou flamengo`
-  - `quando joga?`
-  - `como foi o ultimo?`
-- Salva o time por usuário
-- Busca jogos via scraping da ESPN
-- Responde no Telegram com texto claro e direto
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
+![Telegram](https://img.shields.io/badge/Telegram-Bot-2CA5E0)
+![Status](https://img.shields.io/badge/status-em%20desenvolvimento-orange)
+
+## Visão geral
+O projeto combina IA + scraping para entregar respostas rápidas sobre futebol sem depender de API paga de partidas.
+
+Você pode conversar de forma natural, por exemplo:
+- `sou flamengo`
+- `quando joga?`
+- `como foi o ultimo jogo?`
+- `tem jogo hoje?`
+
+## Funcionalidades
+- Interpretação de linguagem natural com Gemini
+- Fluxo conversacional no Telegram
+- Persistência de time por usuário (SQLite)
+- Busca de próximos jogos e últimos resultados via scraping da ESPN
+- Comandos clássicos de fallback para compatibilidade
 
 ## Stack
 - Python 3.11+
@@ -17,41 +28,41 @@ Bot de Telegram conversacional para acompanhar jogos do seu time com linguagem n
 - `requests`
 - `beautifulsoup4`
 - `sqlite3` (nativo)
-- Gemini API (interpretação conversacional)
+- Gemini API
 
-## Estrutura
-- `bot.py`: entrada principal, comandos e fluxo de conversa
-- `ai_message.py`: interpretação de intenção e respostas de texto
-- `football_api.py`: scraping e normalização dos jogos
-- `database.py`: persistência de preferências do usuário
-- `.env`: variáveis sensíveis
+## Estrutura do projeto
+- `bot.py` -> handlers do Telegram e orquestração
+- `ai_message.py` -> interpretação de intenção e geração de respostas
+- `football_api.py` -> scraping e normalização dos dados de jogos
+- `database.py` -> persistência de preferências (`torcedor.db`)
+- `.env` -> segredos e tokens
 
 ## Pré-requisitos
-- Token de bot do Telegram
+- Token do bot Telegram
 - Chave da API Gemini
 
-## Configuração
-1. Clone o projeto
-2. Crie e ative seu ambiente virtual (opcional, recomendado)
+## Instalação
+1. Clone o repositório
+2. (Opcional) crie e ative ambiente virtual
 3. Instale as dependências:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Crie o `.env`:
+4. Crie o arquivo `.env`:
 
 ```env
 TELEGRAM_TOKEN=seu_token_aqui
 GEMINI_API_KEY=sua_chave_aqui
 ```
 
-## Como rodar
+## Execução
 ```bash
 python bot.py
 ```
 
-## Comandos
+## Comandos disponíveis
 - `/start`
 - `/time <nome do time>`
 - `/limpar`
@@ -59,16 +70,23 @@ python bot.py
 - `/hoje` (compatibilidade)
 - `/ultimo` (compatibilidade)
 
-## Exemplos de conversa
-- `oi`
-- `torco pro sao paulo`
-- `tem jogo hoje?`
-- `resultado do ultimo`
+## Exemplo de fluxo
+1. Usuário: `sou vasco`
+2. Bot salva o time
+3. Usuário: `quando joga?`
+4. Bot responde com próximo jogo formatado
+5. Usuário: `como foi o ultimo?`
+6. Bot responde com placar e contexto
 
-## Observações
-- O bot usa um dicionário local de times mapeados em `football_api.py`
-- O scraping depende da estrutura da ESPN e pode exigir ajuste no futuro
-- `.env` e `*.db` já estão no `.gitignore`
+## Notas importantes
+- O bot usa um dicionário local de times em `football_api.py`
+- O scraping pode exigir ajuste se o HTML da ESPN mudar
+- `.env`, `*.db` e cache Python ficam fora do Git via `.gitignore`
+
+## Roadmap
+- Melhorar reconhecimento de times fora do dicionário local
+- Adicionar testes automatizados
+- Suporte a notificações programadas pré-jogo
 
 ## Licença
 Uso livre para estudo e evolução do projeto.
