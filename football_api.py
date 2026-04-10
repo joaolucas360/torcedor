@@ -1,7 +1,3 @@
-"""
-football_api.py
-Coleta jogos via scraping da ESPN Brasil (sem uso de chave/API externa).
-"""
 from __future__ import annotations
 
 import json
@@ -27,7 +23,6 @@ HEADERS = {
     "Connection": "keep-alive",
 }
 
-# IDs locais = IDs legados da API-Football (compatíveis com seu banco)
 TIMES = [
     {"id": 127, "nome": "Flamengo", "espn_id": 819, "slug": "flamengo", "aliases": ["fla", "mengao"]},
     {"id": 133, "nome": "Vasco da Gama", "espn_id": 3454, "slug": "vasco-da-gama", "aliases": ["vasco"]},
@@ -64,16 +59,10 @@ GRANDES_TIMES = {
 
 
 def get_ultimo_erro_api() -> str | None:
-    """
-    Mantido por compatibilidade com bot.py (agora sem API externa).
-    """
     return None
 
 
 def buscar_times_por_nome(nome: str, pais: str = "Brazil") -> list[dict]:
-    """
-    Busca local via dicionário (sem API externa).
-    """
     consulta = _normalizar_texto(nome)
     resultado: list[dict] = []
 
@@ -128,9 +117,6 @@ def get_jogo_finalizado(time_id: int) -> dict | None:
 
         eh_casa = bool((meu or {}).get("isHome"))
 
-        # 1) Tenta placar em texto bruto do evento.
-        # Regra: na ausencia de marcador de resultado (V/D/E), assume home-away.
-        # Se houver V/D/E, o primeiro numero tende a ser do time foco da pagina.
         base_textos = [status_detail, score_text]
         for bruto in base_textos:
             texto = re.sub(r"\s+", " ", bruto).replace("–", "-").replace("—", "-").strip()
@@ -140,20 +126,16 @@ def get_jogo_finalizado(time_id: int) -> dict | None:
 
             a, b = m.group(1), m.group(2)
             if re.search(r"\b[VDE]\b", texto, re.IGNORECASE):
-                # Ex.: "V 1 - 0" normalmente em perspectiva do time da pagina.
                 placar_texto = (a, b)
                 break
 
-            # Sem marcador, trata como home-away.
             placar_texto = (a, b) if eh_casa else (b, a)
             break
 
-        # 2) Campos dos competidores.
         meu_score = _digitos_placar((meu or {}).get("score"))
         rival_score = _digitos_placar((rival or {}).get("score"))
         if meu_score is not None and rival_score is not None:
             placar_comp = (meu_score, rival_score)
-            # Alguns jogos vêm 0x0 nos competitors e correto no score textual.
             if placar_texto and placar_comp == ("0", "0") and placar_texto != ("0", "0"):
                 return placar_texto
             return placar_comp
@@ -205,7 +187,6 @@ def get_jogo_finalizado(time_id: int) -> dict | None:
         jogo["payload"]["gols_meus"] = gols_meus
         jogo["payload"]["gols_rival"] = gols_rival
     else:
-        # Mantem FT para nao quebrar fluxo, mas sinaliza ausencia de placar.
         jogo["payload"]["gols_meus"] = None
         jogo["payload"]["gols_rival"] = None
 
@@ -327,7 +308,6 @@ def _extrair_objeto_json_balanceado(texto: str, inicio: int) -> str:
 
 
 def _extrair_eventos(data: dict[str, Any]) -> list[dict[str, Any]]:
-    # Caminho esperado atual da ESPN
     eventos = (
         data.get("page", {})
         .get("content", {})
@@ -337,7 +317,6 @@ def _extrair_eventos(data: dict[str, Any]) -> list[dict[str, Any]]:
     if isinstance(eventos, list) and eventos:
         return [e for e in eventos if isinstance(e, dict)]
 
-    # Fallback resiliente para mudanças de estrutura
     coletados: list[dict[str, Any]] = []
 
     def walk(node: Any) -> None:

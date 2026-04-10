@@ -1,7 +1,3 @@
-"""
-database.py
-Persistencia simples em SQLite para lembrar o time escolhido por chat.
-"""
 from __future__ import annotations
 
 import sqlite3

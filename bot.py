@@ -1,7 +1,3 @@
-"""
-bot.py
-Bot Telegram conversacional para acompanhar jogos do time escolhido.
-"""
 from __future__ import annotations
 
 import os
@@ -65,7 +61,6 @@ async def tratar_mensagem(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if not texto:
         return
 
-    # Se o usuario estiver escolhendo um time por numero, prioriza isso.
     if "candidatos_times" in context.user_data:
         await _tratar_escolha_numero(update, context, texto)
         return
@@ -176,7 +171,6 @@ def main() -> None:
     app.add_handler(CommandHandler("time", set_time))
     app.add_handler(CommandHandler("limpar", limpar))
 
-    # Mantidos por compatibilidade, mas o fluxo principal e conversacional.
     app.add_handler(CommandHandler("proximo", proximo))
     app.add_handler(CommandHandler("hoje", hoje))
     app.add_handler(CommandHandler("ultimo", ultimo))

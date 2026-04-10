@@ -1,7 +1,3 @@
-"""
-ai_message.py
-Camada de IA para interpretar mensagens e montar respostas conversacionais.
-"""
 from __future__ import annotations
 
 import json
@@ -16,9 +12,9 @@ from dotenv import load_dotenv
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODELS = [
-    "gemini-1.5-flash",  # preferencia solicitada
+    "gemini-1.5-flash",
     "gemini-1.5-flash-latest",
-    "gemini-2.5-flash",  # fallback quando 1.5 nao estiver disponivel
+    "gemini-2.5-flash",
 ]
 
 
@@ -131,7 +127,6 @@ def _inferir_acao_local(texto_usuario: str, time_salvo: str | None) -> dict[str,
     if not txt:
         return {"acao": "conversa", "resposta": "Manda ai o que voce quer saber do seu time 😄"}
 
-    # salvar time com linguagem natural
     padroes_time = [
         r"(?:sou|torco(?:\s+pro)?|meu\s+time\s+(?:e|é)|salva(?:\s+meu\s+time)?|time\s+é)\s+(.+)$",
         r"^(flamengo|vasco(?:\s+da\s+gama)?|sao\s+paulo|corinthians|palmeiras|santos|fluminense|botafogo|atletico(?:-mg)?|gremio|internacional|bahia|vitoria|ceara|fortaleza|sport|athletico|coritiba|goias|america(?:\s+mineiro)?)$",
@@ -162,7 +157,6 @@ def _inferir_acao_local(texto_usuario: str, time_salvo: str | None) -> dict[str,
             return {"acao": "conversa", "resposta": mensagem_sem_time()}
         return {"acao": "ultimo_jogo"}
 
-    # Saudações informais
     if re.search(r"\b(oi|ola|olá|e ai|eae|fala|salve|bom dia|boa tarde|boa noite)\b", txt):
         return {"acao": "conversa", "resposta": "Fala! Se quiser, ja te conto proximo jogo, jogo de hoje ou ultimo resultado 😄"}
 
