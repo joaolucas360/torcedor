@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
+
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
@@ -15,14 +18,25 @@ from ai_message import (
 )
 from database import init_db, obter_time, remover_time, salvar_time
 from football_api import buscar_times_por_nome, get_jogo_finalizado, get_jogo_hoje, get_proximo_jogo
+from football_live import buscar_jogo_hoje_live
+from live_tracker import loop_monitoramento
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "Fala! Bora acompanhar seu time? Me diz qual time voce torce ou manda /time <nome do time> 😄"
+        "Fala! Bora acompanhar seu time? Me diz qual time voce torce ou manda /time <nome do time> 😄\n\n"
+        "Quando seu time tiver jogo ao vivo, te mando notificacao automatica de gol ⚽, "
+        "cartao vermelho 🟥, penalti 🎯 e muito mais!\n\n"
+        "Use /aovivo pra ver o placar ao vivo na hora que quiser."
     )
 
 
@@ -32,7 +46,6 @@ async def set_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not nome:
         await update.message.reply_text("Manda assim: /time Flamengo")
         return
-
     await _processar_salvar_time(update, context, chat_id, nome)
 
 
@@ -54,6 +67,56 @@ async def hoje(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def ultimo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _responder_acao_jogo(update, "ultimo_jogo")
+
+
+async def aovivo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    pref = obter_time(update.effective_chat.id)
+    if not pref:
+        await update.message.reply_text(mensagem_sem_time())
+        return
+
+    team_id = int(pref["team_id"])
+    jogo = buscar_jogo_hoje_live(team_id)
+
+    if not jogo:
+        await update.message.reply_text(
+            f"Nenhum jogo ao vivo ou agendado hoje para o {pref['team_name']}."
+        )
+        return
+
+    status = jogo.get("status", "NS")
+    meu = jogo.get("meu_time", pref["team_name"])
+    rival = jogo.get("rival", "Adversario")
+    gm = jogo.get("gols_meus", 0)
+    gr = jogo.get("gols_rival", 0)
+    liga = jogo.get("liga", "-")
+    minuto = jogo.get("minuto")
+    min_txt = f" ({minuto}')" if minuto else ""
+
+    status_texto = {
+        "NS": "⏳ Aguardando inicio",
+        "1H": f"🔴 Ao vivo - 1º tempo{min_txt}",
+        "HT": "☕ Intervalo",
+        "2H": f"🔴 Ao vivo - 2º tempo{min_txt}",
+        "ET": f"⚡ Prorrogacao{min_txt}",
+        "P": "🎯 Disputa de penaltis",
+        "FT": "🏁 Encerrado",
+    }.get(status, status)
+
+    linhas = [
+        f"🏆 {liga}",
+        f"{meu} {gm} x {gr} {rival}",
+        f"Status: {status_texto}",
+    ]
+
+    cv_meu = jogo.get("cartoes_vermelhos_meus", 0)
+    cv_rival = jogo.get("cartoes_vermelhos_rival", 0)
+    if cv_meu:
+        linhas.append(f"🟥 {meu}: {cv_meu} cartao(s) vermelho(s)")
+    if cv_rival:
+        linhas.append(f"🟥 {rival}: {cv_rival} cartao(s) vermelho(s)")
+
+    await update.message.reply_text("\n".join(linhas))
 
 
 async def tratar_mensagem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -161,19 +224,31 @@ async def _responder_acao_jogo(update: Update, acao: str) -> None:
     await update.message.reply_text(resposta_jogo(acao, jogo, pref.get("team_name")))
 
 
+async def _post_init(app) -> None:
+    asyncio.create_task(loop_monitoramento(app))
+    logger.info("[bot] Live tracker iniciado em background.")
+
+
 def main() -> None:
     if not TELEGRAM_TOKEN:
         raise RuntimeError("TELEGRAM_TOKEN nao encontrado no .env")
 
     init_db()
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+
+    app = (
+        ApplicationBuilder()
+        .token(TELEGRAM_TOKEN)
+        .post_init(_post_init)
+        .build()
+    )
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("time", set_time))
     app.add_handler(CommandHandler("limpar", limpar))
-
     app.add_handler(CommandHandler("proximo", proximo))
     app.add_handler(CommandHandler("hoje", hoje))
     app.add_handler(CommandHandler("ultimo", ultimo))
+    app.add_handler(CommandHandler("aovivo", aovivo))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, tratar_mensagem))
     app.run_polling()
