@@ -255,8 +255,23 @@ async def _responder_acao_jogo(update: Update, acao: str) -> None:
 
 
 async def _post_init(app) -> None:
-    asyncio.create_task(loop_monitoramento(app))
+    task = asyncio.create_task(loop_monitoramento(app))
+    app.bot_data["live_tracker_task"] = task
     logger.info("[bot] Live tracker iniciado em background.")
+
+
+async def _post_stop(app) -> None:
+    task = app.bot_data.get("live_tracker_task")
+    if not task:
+        return
+    if task.done():
+        return
+
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        logger.info("[bot] Live tracker finalizado com shutdown gracioso.")
 
 
 def main() -> None:
@@ -270,6 +285,7 @@ def main() -> None:
         ApplicationBuilder()
         .token(TELEGRAM_TOKEN)
         .post_init(_post_init)
+        .post_stop(_post_stop)
         .build()
     )
 
