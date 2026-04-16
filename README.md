@@ -1,4 +1,4 @@
-# Torcedor Bot
+# notificafut
 
 Bot de Telegram para torcedores acompanharem seu time com linguagem natural, resultados e notificacoes ao vivo.
 
@@ -63,12 +63,14 @@ Fluxo principal:
 - `requests`
 - `beautifulsoup4`
 - `python-dotenv`
+- `sentry-sdk` (opcional, observabilidade)
 - `sqlite3` (nativo)
 
 ## Pre-requisitos
 - Token do bot Telegram (`TELEGRAM_TOKEN`)
 - Chave Gemini (`GEMINI_API_KEY`) para NLP/conversa
 - Token football-data.org (`FOOTBALL_DATA_TOKEN`) para live
+- DSN do Sentry (`SENTRY_DSN`) opcional para monitoramento de erros
 
 ## Instalacao
 1. Clone o repositorio
@@ -85,6 +87,7 @@ pip install -r requirements.txt
 TELEGRAM_TOKEN=seu_token_telegram
 GEMINI_API_KEY=sua_chave_gemini
 FOOTBALL_DATA_TOKEN=seu_token_football_data
+SENTRY_DSN=sua_dsn_opcional
 ```
 
 ## Execucao
@@ -97,6 +100,14 @@ python bot.py
 - A cada ciclo (`POLL_INTERVAL`), usuarios sao agrupados por `team_id`.
 - Para cada time, consulta-se a API live e compara com o ultimo estado salvo em banco.
 - Diferencas viram eventos e geram mensagens no Telegram.
+
+## Integracoes prontas
+- GitHub Actions CI: `.github/workflows/ci.yml`
+- CodeQL: `.github/workflows/codeql.yml`
+- Dependabot: `.github/dependabot.yml`
+- Deploy Render: `render.yaml`
+- Deploy Railway: `railway.json`
+- Docker: `Dockerfile`
 
 ## Banco de dados
 Arquivo local: `torcedor.db`

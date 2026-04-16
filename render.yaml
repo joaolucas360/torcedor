@@ -1,0 +1,13 @@
+services:
+  - type: worker
+    name: notificafut-bot
+    env: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FOOTBALL_DATA_TOKEN
+        sync: false

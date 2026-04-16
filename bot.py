@@ -24,6 +24,7 @@ from live_tracker import loop_monitoramento
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +59,17 @@ def _setup_safe_logging() -> None:
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
+
+
+def _setup_sentry() -> None:
+    if not SENTRY_DSN:
+        return
+    try:
+        import sentry_sdk
+        sentry_sdk.init(dsn=SENTRY_DSN, send_default_pii=False)
+        logger.info("[bot] Sentry conectado.")
+    except Exception as e:
+        logger.warning(f"[bot] Nao foi possivel iniciar Sentry: {e}")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -278,6 +290,7 @@ def main() -> None:
         raise RuntimeError("TELEGRAM_TOKEN nao encontrado no .env")
 
     _setup_safe_logging()
+    _setup_sentry()
     init_db()
 
     app = (
