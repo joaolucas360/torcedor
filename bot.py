@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 
 from dotenv import load_dotenv
 from telegram import Update
@@ -29,6 +30,35 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+class RedactSecretsFilter(logging.Filter):
+    def __init__(self, secrets: list[str] | None = None) -> None:
+        super().__init__()
+        self.secrets = [s for s in (secrets or []) if s]
+        self.bot_token_pattern = re.compile(r"/bot\d{8,12}:[A-Za-z0-9_-]{30,}")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        redacted = self.bot_token_pattern.sub("/bot***REDACTED***", message)
+        for secret in self.secrets:
+            redacted = redacted.replace(secret, "***REDACTED***")
+
+        if redacted != message:
+            record.msg = redacted
+            record.args = ()
+        return True
+
+
+def _setup_safe_logging() -> None:
+    root_logger = logging.getLogger()
+    filter_ = RedactSecretsFilter([TELEGRAM_TOKEN] if TELEGRAM_TOKEN else [])
+    for handler in root_logger.handlers:
+        handler.addFilter(filter_)
+
+    # Evita log de request completo (URL inclui o token do bot).
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -233,6 +263,7 @@ def main() -> None:
     if not TELEGRAM_TOKEN:
         raise RuntimeError("TELEGRAM_TOKEN nao encontrado no .env")
 
+    _setup_safe_logging()
     init_db()
 
     app = (
