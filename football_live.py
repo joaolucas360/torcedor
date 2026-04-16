@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""
-football_live.py
-----------------
-Busca dados de jogos AO VIVO via football-data.org (plano gratuito).
-Limite gratuito: 10 requisicoes/minuto
-Competicoes cobertas: Brasileirao Serie A (id=2013) e Libertadores (id=2152)
-"""
-
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -35,29 +27,28 @@ STATUS_PRIORITY = {
 class LiveDataTemporaryError(Exception):
     pass
 
-# Mapeamento: team_id interno -> id do time no football-data.org
 FOOTBALL_DATA_IDS: dict[int, int] = {
-    127: 737,    # Flamengo
-    133: 6357,   # Vasco da Gama
-    126: 1062,   # São Paulo
-    121: 1763,   # Palmeiras
-    131: 1768,   # Corinthians
-    128: 6119,   # Santos
-    124: 6309,   # Fluminense
-    120: 1764,   # Botafogo
-    1062: 1081,  # Atletico Mineiro
-    135: 6318,   # Cruzeiro
-    130: 6308,   # Gremio
-    119: 6301,   # Internacional
-    118: 6320,   # Bahia
-    136: 6316,   # Vitoria
-    129: 6323,   # Ceara
-    154: 6321,   # Fortaleza
-    123: 6313,   # Sport
-    134: 6317,   # Athletico Paranaense
-    147: 6319,   # Coritiba
-    151: 6322,   # Goias
-    125: 6315,   # America Mineiro
+    127: 737,
+    133: 6357,
+    126: 1062,
+    121: 1763,
+    131: 1768,
+    128: 6119,
+    124: 6309,
+    120: 1764,
+    1062: 1081,
+    135: 6318,
+    130: 6308,
+    119: 6301,
+    118: 6320,
+    136: 6316,
+    129: 6323,
+    154: 6321,
+    123: 6313,
+    134: 6317,
+    147: 6319,
+    151: 6322,
+    125: 6315,
 }
 
 
@@ -72,9 +63,6 @@ def _get(path: str, params: dict | None = None) -> dict[str, Any]:
 
 
 def buscar_jogo_ao_vivo(team_id_interno: int) -> dict | None:
-    """
-    Retorna dados do jogo ao vivo do time, ou None se nao houver.
-    """
     fd_id = FOOTBALL_DATA_IDS.get(team_id_interno)
     if not fd_id:
         return None
@@ -99,9 +87,6 @@ def buscar_jogo_ao_vivo(team_id_interno: int) -> dict | None:
 
 
 def buscar_jogo_hoje_live(team_id_interno: int) -> dict | None:
-    """
-    Retorna jogo de hoje (ao vivo OU agendado para hoje).
-    """
     fd_id = FOOTBALL_DATA_IDS.get(team_id_interno)
     if not fd_id:
         return None
@@ -172,7 +157,6 @@ def _normalizar_match(match: dict[str, Any], meu_fd_id: int) -> dict | None:
         except Exception:
             pass
 
-    # Cartoes vermelhos
     bookings = match.get("bookings") or []
     cv_meu = 0
     cv_rival = 0
@@ -184,7 +168,6 @@ def _normalizar_match(match: dict[str, Any], meu_fd_id: int) -> dict | None:
             else:
                 cv_rival += 1
 
-    # Penaltis marcados
     goals = match.get("goals") or []
     penaltis = sum(1 for g in goals if str(g.get("type") or "").upper() == "PENALTY")
 

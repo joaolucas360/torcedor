@@ -1,12 +1,5 @@
 from __future__ import annotations
 
-"""
-live_tracker.py
----------------
-Roda em background e envia notificacoes ao vivo no Telegram.
-Verifica todos os usuarios a cada 60 segundos.
-"""
-
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
@@ -51,20 +44,17 @@ def _detectar_eventos(anterior: dict, atual: dict) -> list[dict]:
     status_ant = anterior.get("status", "")
     status_now = atual.get("status", "")
 
-    # Inicio
     if status_ant in ("NS", "") and status_now == "1H":
         meu = atual.get("meu_time", "Seu time")
         rival = atual.get("rival", "Adversario")
         liga = atual.get("liga", "")
         eventos.append({"tipo": "inicio", "descricao": f"Começou! {meu} x {rival}\n🏆 {liga}"})
 
-    # Intervalo
     if status_ant == "1H" and status_now == "HT":
         gm = atual.get("gols_meus", 0)
         gr = atual.get("gols_rival", 0)
         eventos.append({"tipo": "intervalo", "descricao": f"Intervalo!\nPlacar: {gm} x {gr}"})
 
-    # Segundo tempo
     if status_ant == "HT" and status_now == "2H":
         eventos.append({"tipo": "segundo_tempo", "descricao": "Segundo tempo começou!"})
 
@@ -73,7 +63,6 @@ def _detectar_eventos(anterior: dict, atual: dict) -> list[dict]:
     minuto = atual.get("minuto", "")
     minuto_txt = f" ({minuto}')" if minuto else ""
 
-    # Gols
     gm_ant = int(anterior.get("gols_meus") or 0)
     gr_ant = int(anterior.get("gols_rival") or 0)
     gm_now = int(atual.get("gols_meus") or 0)
@@ -85,7 +74,6 @@ def _detectar_eventos(anterior: dict, atual: dict) -> list[dict]:
     for _ in range(gr_now - gr_ant):
         eventos.append({"tipo": "gol", "descricao": f"Gol do {rival}{minuto_txt}\nPlacar: {gm_now} x {gr_now}"})
 
-    # Cartoes vermelhos
     cv_meu_ant = int(anterior.get("cartoes_vermelhos_meus") or 0)
     cv_rival_ant = int(anterior.get("cartoes_vermelhos_rival") or 0)
     cv_meu_now = int(atual.get("cartoes_vermelhos_meus") or 0)
@@ -97,13 +85,11 @@ def _detectar_eventos(anterior: dict, atual: dict) -> list[dict]:
     for _ in range(cv_rival_now - cv_rival_ant):
         eventos.append({"tipo": "cartao_vermelho", "descricao": f"Cartão vermelho no {rival}!{minuto_txt}"})
 
-    # Penaltis
     pen_ant = int(anterior.get("penaltis") or 0)
     pen_now = int(atual.get("penaltis") or 0)
     for _ in range(pen_now - pen_ant):
         eventos.append({"tipo": "penalti", "descricao": f"Pênalti marcado!{minuto_txt}"})
 
-    # Fim de jogo
     if status_ant in LIVE_STATUSES and status_now == "FT":
         gm = atual.get("gols_meus", 0)
         gr = atual.get("gols_rival", 0)

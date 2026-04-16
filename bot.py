@@ -56,7 +56,6 @@ def _setup_safe_logging() -> None:
     for handler in root_logger.handlers:
         handler.addFilter(filter_)
 
-    # Evita log de request completo (URL inclui o token do bot).
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 
